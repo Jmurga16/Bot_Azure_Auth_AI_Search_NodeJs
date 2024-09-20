@@ -15,11 +15,11 @@ const restify = require('restify');
 // Import required bot services.
 // See https://aka.ms/bot-services to learn more about the different parts of a bot.
 const {
-    CloudAdapter,
-    ConversationState,
-    MemoryStorage,
-    UserState,
-    ConfigurationBotFrameworkAuthentication
+  CloudAdapter,
+  ConversationState,
+  MemoryStorage,
+  UserState,
+  ConfigurationBotFrameworkAuthentication
 } = require('botbuilder');
 
 const { AuthBot } = require('./bots/authBot');
@@ -31,25 +31,17 @@ const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(p
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
 adapter.onTurnError = async (context, error) => {
-    // This check writes out errors to console log .vs. app insights.
-    // NOTE: In production environment, you should consider logging this to Azure
-    //       application insights. See https://aka.ms/bottelemetry for telemetry
-    //       configuration instructions.
-    console.error(`\n [onTurnError] unhandled error: ${ error }`);
 
-    // Send a trace activity, which will be displayed in Bot Framework Emulator
-    await context.sendTraceActivity(
-        'OnTurnError Trace',
-        `${ error }`,
-        'https://www.botframework.com/schemas/error',
-        'TurnError'
-    );
+  console.error(`\n [onTurnError] unhandled error: ${error}`);
 
-    // Send a message to the user
-    await context.sendActivity('The bot encountered an error or bug.');
-    await context.sendActivity('To continue to run this bot, please fix the bot source code.');
-    // Clear out state
-    await conversationState.delete(context);
+  // Send a trace activity, which will be displayed in Bot Framework Emulator
+  await context.sendTraceActivity('OnTurnError Trace', `${error}`, 'https://www.botframework.com/schemas/error', 'TurnError');
+
+  // Send a message to the user
+  await context.sendActivity('The bot encountered an error or bug.');
+  await context.sendActivity('To continue to run this bot, please fix the bot source code.');
+  // Clear out state
+  await conversationState.delete(context);
 };
 
 // Define the state store for your bot.
@@ -63,6 +55,7 @@ const userState = new UserState(memoryStorage);
 
 // Create the main dialog.
 const dialog = new MainDialog();
+
 // Create the bot that will handle incoming messages.
 const bot = new AuthBot(conversationState, userState, dialog);
 
@@ -70,20 +63,131 @@ const bot = new AuthBot(conversationState, userState, dialog);
 const server = restify.createServer();
 server.use(restify.plugins.bodyParser());
 
-server.listen(process.env.port || process.env.PORT || 3978, function() {
-    console.log(`\n${ server.name } listening to ${ server.url }`);
-    console.log('\nGet Bot Framework Emulator: https://aka.ms/botframework-emulator');
-    console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
+server.listen(process.env.port || process.env.PORT || 3978, function () {
+  //console.log(`\n${server.name} listening to ${server.url}`);
+  console.log(`\n${server.name} listening to http://localhost:3978`);
+  console.log('\nGet Bot Framework Emulator: https://aka.ms/botframework-emulator');
+  console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
 });
 
-// Listen for incoming requests.
+// HTTP / Pagina Principal
+server.get('/', (req, res, next) => {
+
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.write(`
+      
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <script
+        crossorigin="anonymous"
+        src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"
+      ></script>
+      <style>
+        html,
+        body {
+            height: 100%;
+            background-image: linear-gradient( #343541,#525468);
+            color: antiquewhite;
+            font-family: 'Segoe UI', Calibri, sans-serif;
+        }
+  
+        body {
+          padding-left: 5px;
+        }
+  
+        #webchat {
+          height: 85%;
+          width: 100%;
+        }
+        .webchat__stacked-layout__main{
+          white-space: break-spaces;
+          
+        }
+        .webchat__stacked-layout--from-user{
+          background-color: rgba(32,33,35, .2);
+        }
+        
+      </style>
+    </head>
+    <body>
+      
+      <h1><img src='https://logos-world.net/wp-content/uploads/2021/02/Microsoft-Azure-Emblem.png' height="40">ChatGPT - REP</h1>
+      <!-- <pre>version 20231030 | model: ChatGPT (turbo) | API: Chat Completion API | max_tokens: 800 | temperature: 0.7 | Speech input enabled: false | Speech language: N/A</pre>  -->
+      <div style="" id="webchat" role="main"></div>
+      <script>
+        // Set  the CSS rules.
+        const styleSet = window.WebChat.createStyleSet({
+            bubbleBackground: 'transparent',
+            bubbleBorderColor: 'darkslategrey',
+            bubbleBorderRadius: 5,
+            bubbleBorderStyle: 'solid',
+            bubbleBorderWidth: 0,
+            bubbleTextColor: 'antiquewhite',
+  
+            userAvatarBackgroundColor: 'rgba(53, 55, 64, .3)',
+            bubbleFromUserBackground: 'transparent', 
+            bubbleFromUserBorderColor: '#E6E6E6',
+            bubbleFromUserBorderRadius: 5,
+            bubbleFromUserBorderStyle: 'solid',
+            bubbleFromUserBorderWidth: 0,
+            bubbleFromUserTextColor: 'antiquewhite',
+  
+            notificationText: 'white',
+  
+            bubbleMinWidth: 400,
+            bubbleMaxWidth: 720,
+  
+            botAvatarBackgroundColor: 'antiquewhite',
+            avatarBorderRadius: 2,
+            avatarSize: 40,
+  
+            rootHeight: '100%',
+            rootWidth: '100%',
+            backgroundColor: 'rgba(70, 130, 180, .2)',
+  
+            hideUploadButton: 'true'
+        });
+  
+        // After generated, you can modify the CSS rules.
+        // Change font family and weight. 
+        styleSet.textContent = {
+            ...styleSet.textContent,
+            fontWeight: 'regular'
+        };
+  
+      // Set the avatar options. 
+        const avatarOptions = {
+            botAvatarInitials: '.',
+            userAvatarInitials: 'Me',
+            botAvatarImage: 'https://dwglogo.com/wp-content/uploads/2019/03/1600px-OpenAI_logo-1024x705.png',            
+            };
+
+        window.WebChat.renderWebChat(
+          {
+            directLine: window.WebChat.createDirectLine({
+              token: '` + process.env.DIRECT_LINE_TOKEN + `'
+            }),
+            styleSet, styleOptions: avatarOptions
+          },
+          document.getElementById('webchat')
+        );
+      </script>
+        
+    </body>
+  </html>
+      `);
+  res.end();
+  return next();
+});
+
+// Enpoint Principal Azure Bot.
 server.post('/api/messages', async (req, res) => {
-    // Route received a request to adapter for processing
-    await adapter.process(req, res, (context) => bot.run(context));
+  await adapter.process(req, res, (context) => bot.run(context));
 });
 
+// Endpoint Test
 server.post('/api/test', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    //this is a callback function
-    res.writeHead(200);
-    res.end('Hello Azure');
-  }));
+  res.writeHead(200);
+  res.end('Hello Azure');
+}));
