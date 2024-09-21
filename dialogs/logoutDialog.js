@@ -31,7 +31,7 @@ class LogoutDialog extends ComponentDialog {
     async interrupt(innerDc) {
         if (innerDc.context.activity.type === ActivityTypes.Message) {
             const text = innerDc.context.activity.text.toLowerCase();
-            if (text === 'logout') {
+            if (text === 'salir') {
                 const userTokenClient = innerDc.context.turnState.get(innerDc.context.adapter.UserTokenClientKey);
 
                 const { activity } = innerDc.context;
@@ -40,7 +40,7 @@ class LogoutDialog extends ComponentDialog {
                 await innerDc.context.sendActivity('Has cerrado sesión.');
                 return await innerDc.cancelAllDialogs();
             }
-        }
+        } 
     }
 }
 

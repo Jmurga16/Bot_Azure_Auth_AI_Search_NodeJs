@@ -13,18 +13,20 @@ class AuthBot extends DialogBot {
     constructor(conversationState, userState, dialog) {
         super(conversationState, userState, dialog);
 
+        //Mensaje de Bienvenida
         this.onMembersAdded(async (context, next) => {
             const membersAdded = context.activity.membersAdded;
             for (let cnt = 0; cnt < membersAdded.length; cnt++) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
                     await context.sendActivity(
-                        'Bienvenido al Bot Empresarial. Escriba cualquier cosa para iniciar sesión. Escriba \'logout\' para cerrar sesión.');
+                        'Bienvenido al Bot Empresarial. Escriba cualquier cosa para iniciar sesión. Escriba \'salir\' para cerrar sesión.');
                 }
             }
 
             await next();
         });
 
+        
         this.onTokenResponseEvent(async (context, next) => {
             console.log('Running dialog with Token Response Event Activity.');
             await this.dialog.run(context, this.dialogState);

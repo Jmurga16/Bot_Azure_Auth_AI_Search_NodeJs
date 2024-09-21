@@ -22,10 +22,11 @@ class DialogBot extends ActivityHandler {
         this.dialogState = this.conversationState.createProperty('DialogState');
 
 
+        //Paso que contesta las preguntas
         this.onMessage(async (context, next) => {
             console.log('Running dialog with Message Activity.');
 
-            // Run the Dialog with the new message Activity.
+            // Ejecute el diálogo con la nueva actividad de mensaje.
             await this.dialog.run(context, this.dialogState);
 
             await next();
@@ -121,7 +122,7 @@ class DialogBot extends ActivityHandler {
     async run(context) {
         await super.run(context);
 
-        // Save any state changes. The load happened during the execution of the Dialog.
+        // Guarda los cambios de estado. La carga se produjo durante la ejecución del diálogo.
         await this.conversationState.saveChanges(context, false);
         await this.userState.saveChanges(context, false);
     }

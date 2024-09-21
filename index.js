@@ -3,31 +3,23 @@
 
 // index.js is used to setup and configure your bot
 
-// Import required pckages
+// Importar Librerias
 const path = require('path');
-
-// Read botFilePath and botFileSecret from .env file.
 const ENV_FILE = path.join(__dirname, '.env');
 require('dotenv').config({ path: ENV_FILE });
-
 const restify = require('restify');
 
-// Import required bot services.
-// See https://aka.ms/bot-services to learn more about the different parts of a bot.
-const {
-  CloudAdapter,
-  ConversationState,
-  MemoryStorage,
-  UserState,
-  ConfigurationBotFrameworkAuthentication
-} = require('botbuilder');
+// Importar servicios de Bot.
+const { CloudAdapter, ConversationState, MemoryStorage, UserState, ConfigurationBotFrameworkAuthentication } = require('botbuilder');
 
+// Importar archivos Js
 const { AuthBot } = require('./bots/authBot');
 const { MainDialog } = require('./dialogs/mainDialog');
 
+// Autenticacion del Bot con parametros Enviroment
 const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(process.env);
-// Create adapter.
-// See https://aka.ms/about-bot-adapter to learn more about adapters.
+
+// Crear adapter.
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
 adapter.onTurnError = async (context, error) => {
@@ -44,22 +36,20 @@ adapter.onTurnError = async (context, error) => {
   await conversationState.delete(context);
 };
 
-// Define the state store for your bot.
-// See https://aka.ms/about-bot-state to learn more about using MemoryStorage.
-// A bot requires a state storage system to persist the dialog and user state between messages.
+// Guardar usuario y datos de conversación
 const memoryStorage = new MemoryStorage();
 
-// Create conversation and user state with in-memory storage provider.
+// Crear conversación y estado de usuario con proveedor de almacenamiento en memoria
 const conversationState = new ConversationState(memoryStorage);
 const userState = new UserState(memoryStorage);
 
-// Create the main dialog.
+// Crear el Dialogo Principal.
 const dialog = new MainDialog();
 
-// Create the bot that will handle incoming messages.
+// Crea el bot que manejará los mensajes entrantes.
 const bot = new AuthBot(conversationState, userState, dialog);
 
-// Create HTTP server.
+// Crear HTTP server.
 const server = restify.createServer();
 server.use(restify.plugins.bodyParser());
 

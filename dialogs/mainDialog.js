@@ -11,6 +11,7 @@ const MAIN_WATERFALL_DIALOG = 'MainWaterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
 class MainDialog extends LogoutDialog {
+
     constructor() {
         super(MAIN_DIALOG, process.env.connectionName);
 
@@ -20,7 +21,9 @@ class MainDialog extends LogoutDialog {
             title: 'Iniciar Sesión',
             timeout: 300000
         }));
+
         this.addDialog(new ConfirmPrompt(CONFIRM_PROMPT));
+
         this.addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
             this.promptStep.bind(this),
             this.loginStep.bind(this),
@@ -51,43 +54,40 @@ class MainDialog extends LogoutDialog {
         return await stepContext.beginDialog(OAUTH_PROMPT);
     }
 
+    //Paso despues de digitar el token
     async loginStep(stepContext) {
-        // Get the token from the previous step. Note that we could also have gotten the
-        // token directly from the prompt itself. There is an example of this in the next method.
+        //Obtenga el token del paso anterior. Tenga en cuenta que también podríamos haber obtenido el token directamente desde el propio mensaje.
         const tokenResponse = stepContext.result;
         if (tokenResponse) {
             await stepContext.context.sendActivity('Ya has iniciado sesión.');
-            return await stepContext.prompt(CONFIRM_PROMPT, 'Would you like to view your token?');
+            return await stepContext.prompt(CONFIRM_PROMPT, 'Quieres ver tu token?');
         }
         await stepContext.context.sendActivity('El inicio de sesión no fue exitoso, por favor intente nuevamente.');
         return await stepContext.endDialog();
     }
 
+    //Paso si pones "No" despues de login
     async displayTokenPhase1(stepContext) {
         await stepContext.context.sendActivity('Gracias.');
 
         const result = stepContext.result;
         if (result) {
-            // Call the prompt again because we need the token. The reasons for this are:
-            // 1. If the user is already logged in we do not need to store the token locally in the bot and worry
-            // about refreshing it. We can always just call the prompt again to get the token.
-            // 2. We never know how long it will take a user to respond. By the time the
-            // user responds the token may have expired. The user would then be prompted to login again.
-            //
-            // There is no reason to store the token locally in the bot because we can always just call
-            // the OAuth prompt to get the token or get a new token if needed.
+            //Llamamos al mensaje nuevamente porque necesitamos el token.
+            //Si el usuario ya inició sesión, no necesitamos almacenar el token localmente en el bot y preocuparnos por actualizarlo            
             return await stepContext.beginDialog(OAUTH_PROMPT);
         }
         return await stepContext.endDialog();
     }
 
+    //Paso si pones "Si" despues de login
     async displayTokenPhase2(stepContext) {
         const tokenResponse = stepContext.result;
         if (tokenResponse) {
-            await stepContext.context.sendActivity(`Here is your token ${ tokenResponse.token }`);
+            await stepContext.context.sendActivity(`Tu token ${tokenResponse.token}`);
         }
         return await stepContext.endDialog();
     }
+
 }
 
 module.exports.MainDialog = MainDialog;
