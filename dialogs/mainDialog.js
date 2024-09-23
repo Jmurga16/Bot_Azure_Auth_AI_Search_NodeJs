@@ -110,19 +110,13 @@ class MainDialog extends LogoutDialog {
     }
 
     async connectToAI(stepContext) {
-        //const tokenResponse = stepContext.result;
-        let response = "Response";
 
-        //messageFromUser = stepContext.context.activity.text
+        messageFromUser = stepContext.context.activity.text
 
-        let tmp_conversation_history = "";
         let conversation_history_array = [];
 
-
-        //return await stepContext.context.sendActivity(stepContext.context.activity.text)
-
-        // check if conversation history is not larger than history_length, if so remove from begining
-        /* if (this.count_user_messages(conversation_history_array) > history_length) {
+        // Comprueba si el historial de conversaciones no es mayor que la longitud del historial, o elimínalo desde el principio.
+        if (this.count_user_messages(conversation_history_array) > history_length) {
             console.log("history too long - removing first element");
             let N = 2;
             for (let i = 0; i < N; i++) {
@@ -150,36 +144,31 @@ class MainDialog extends LogoutDialog {
             "presence_penalty": 0,
             "max_tokens": 800,
             "stop": null
-        }); */
+        });
 
-        return await stepContext.context.sendActivity(response)
-
-        /* try {
-            // send request to openai
+        try {
+            // Enviar request a OpenAI
             const data = await this.postDataToEndpoint(url, reqBody, headers);
-            // add the chatbot response to the conversation history
+
+            // Agregar la respuesta del chatbot a "conversation history"
             conversation_history_array.push({ "role": data.choices[0].message.role, "content": data.choices[0].message.content });
-            // update conversation history
-            conversation_history_dict[context.activity.conversation.id] = conversation_history_array;
-            // send response to user
-            const replyText = `${data.choices[0].message.content} \n[~  ${data.usage.total_tokens} tokens in ${conversation_history_array.length} turns]`;
-            // const replyText = `Echox: ${ context.activity.text } value: ${ context.activity.value }`;
-            //await context.sendActivity(botbuilder_1.MessageFactory.text(replyText));
-            return await stepContext.context.sendActivity(replyText)
-            // By calling next() you ensure that the next BotHandler is run.
-            await next();
+            // Actualizar "conversation history"
+            conversation_history_dict[stepContext.context.activity.conversation.id] = conversation_history_array;
+            // Enviar respuesta a Usuario
+            const responseBot = `${data.choices[0].message.content} \n[~  ${data.usage.total_tokens} tokens in ${conversation_history_array.length} turns]`;
+
+            return await stepContext.context.sendActivity(responseBot)
+
         }
         catch (error) {
-            console.log(error);
-            await context.sendActivity(botbuilder_1.MessageFactory.text(`${error} - try again later!`));
-            await next();
-        } */
+            return await stepContext.context.sendActivity(`${error} - try again later!`)
+        }
     }
 
-    postDataToEndpoint(url, requestBody, headers) {
-        return (async () => {
+    async postDataToEndpoint(url, requestBody, headers) {
+        return __awaiter(this, void 0, void 0, function* () {
             try {
-                const response = await axios_1.default.post(url, requestBody, { headers });
+                const response = yield axios_1.default.post(url, requestBody, { headers });
                 return response.data;
             }
             catch (error) {
