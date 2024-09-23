@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/3e6b29c2-552f-44bd-bfe9-f2e91d19b11c/resourceGroups/REP_RG_LEIA_PROYECTOS/providers/Microsoft.Web/sites/rep-webapp-bot-auth01",
+    "appService.deploySubpath": "."
+}

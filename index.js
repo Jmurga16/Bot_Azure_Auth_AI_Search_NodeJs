@@ -84,6 +84,7 @@ server.get('/', (req, res, next) => {
   
         body {
           padding-left: 5px;
+          overflow: hidden
         }
   
         #webchat {
