@@ -1,4 +1,4 @@
-# Bot Authentication
+# Bot Authentication with AI Search
 
 Bot Framework v4 bot authentication sample
 
