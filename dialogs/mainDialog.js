@@ -11,7 +11,8 @@ const CONFIRM_PROMPT = 'ConfirmPrompt';
 const MAIN_DIALOG = 'MainDialog';
 const MAIN_WATERFALL_DIALOG = 'MainWaterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
-var b = 1;
+
+var counterSent = 0;
 
 const url = process.env.OPENAI_API_URL;
 const headers = {
@@ -109,11 +110,44 @@ class MainDialog extends LogoutDialog {
         return await stepContext.endDialog();
     }
 
+    // Función que itera a través del historial de conversaciones y cuenta la cantidad de mensajes de "usuario" que aparecen
+    count_user_messages(conversation_history_array) {
+        let count = 0;
+        for (let i = 0; i < conversation_history_array.length; i++) {
+            if (conversation_history_array[i].role == "user") {
+                count = count + 1;
+            }
+        }
+        return count;
+    }
+
+    //Funcion para conectarse a otros Endpoints
+    async postDataToEndpoint(url, requestBody, headers) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = yield axios_1.default.post(url, requestBody, { headers });
+                return response.data;
+            }
+            catch (error) {
+                throw new Error(`Error posting data to ${url}: ${error}`);
+            }
+        });
+    }
+
+    //Funcion para conectarse a OPEN AI
     async connectToAI(stepContext) {
 
         messageFromUser = stepContext.context.activity.text
 
-        let conversation_history_array = [];
+        counterSent++
+
+        if (messageFromUser.length == 6 && counterSent == 1) {
+            return await stepContext.context.sendActivity("Inició sesión exitoso.")
+        }
+
+        //await stepContext.context.sendActivity(`Consulta numero ${counterSent}`)
+
+        let conversation_history_array = [{ "role": "user", "content": "Contestar en español" }];
 
         // Comprueba si el historial de conversaciones no es mayor que la longitud del historial, o elimínalo desde el principio.
         if (this.count_user_messages(conversation_history_array) > history_length) {
@@ -163,29 +197,6 @@ class MainDialog extends LogoutDialog {
         catch (error) {
             return await stepContext.context.sendActivity(`${error} - try again later!`)
         }
-    }
-
-    async postDataToEndpoint(url, requestBody, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const response = yield axios_1.default.post(url, requestBody, { headers });
-                return response.data;
-            }
-            catch (error) {
-                throw new Error(`Error posting data to ${url}: ${error}`);
-            }
-        });
-    }
-
-    // function that iterates through the conversation history and counts number of occurance "user" messages
-    count_user_messages(conversation_history_array) {
-        let count = 0;
-        for (let i = 0; i < conversation_history_array.length; i++) {
-            if (conversation_history_array[i].role == "user") {
-                count = count + 1;
-            }
-        }
-        return count;
     }
 
 }
