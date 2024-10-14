@@ -1,4 +1,4 @@
-# Bot Authentication
+# Bot Authentication with AI Search
 
 Bot Framework v4 bot authentication sample
 
@@ -11,6 +11,7 @@ NOTE: Microsoft Teams currently differs slightly in the way auth is integrated w
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) version 16.16.0 or higher
+- Node Recomendable : Version 18.18.2
 
     ```bash
     # determine node version
