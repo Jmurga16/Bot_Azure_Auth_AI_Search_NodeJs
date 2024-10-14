@@ -13,8 +13,10 @@ const MAIN_WATERFALL_DIALOG = 'MainWaterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
 var counterSent = 0;
+var iddoc = 0;
+var iddoctext = '';
 
-const url = process.env.OPENAI_API_URL;
+const openaiUrl = process.env.OPENAI_API_URL;
 const headers = {
     'Content-Type': 'application/json',
     'api-key': process.env.OPENAI_API_KEY
@@ -22,7 +24,8 @@ const headers = {
 let messageFromUser = ""
 
 let conversation_history_dict = {};
-const history_length = 3;
+//const history_length = 3;
+const history_length = 5;
 let messages_init = {
     "role": "system",
     "content": "As an advanced chatbot, your primary goal is to assist users to the best of your ability. This may involve answering questions, providing helpful information, or completing tasks based on user input. In order to effectively assist users, it is important to be detailed and thorough in your responses. Use examples and evidence to support your points and justify your recommendations or solutions."
@@ -30,8 +33,6 @@ let messages_init = {
 
 
 class MainDialog extends LogoutDialog {
-
-    url1 = process.env.OPENAI_API_URL;
 
     constructor() {
         super(MAIN_DIALOG, process.env.connectionName);
@@ -44,6 +45,8 @@ class MainDialog extends LogoutDialog {
         }));
 
         this.addDialog(new ConfirmPrompt(CONFIRM_PROMPT));
+
+        counterSent = 0
 
         //stepContext = this
         this.addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
@@ -121,7 +124,7 @@ class MainDialog extends LogoutDialog {
         return count;
     }
 
-    //Funcion para conectarse a otros Endpoints
+    //#region Funcion para conectarse a otros Endpoints
     async postDataToEndpoint(url, requestBody, headers) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -133,6 +136,8 @@ class MainDialog extends LogoutDialog {
             }
         });
     }
+    //#endregion
+
 
     //Funcion para conectarse a OPEN AI
     async connectToAI(stepContext) {
@@ -142,12 +147,16 @@ class MainDialog extends LogoutDialog {
         counterSent++
 
         if (messageFromUser.length == 6 && counterSent == 1) {
-            return await stepContext.context.sendActivity("Inició sesión exitoso.")
+            return await stepContext.context.sendActivity("Inicio de sesión exitoso.")
         }
 
         //await stepContext.context.sendActivity(`Consulta numero ${counterSent}`)
 
-        let conversation_history_array = [{ "role": "user", "content": "Contestar en español" }];
+        //let conversation_history_array = [{ "role": "user", "content": "Contestar en español" }];
+        let conversation_history_array = [{
+            "role": "system",
+            "content": "Assistant is a large language model trained by OpenAI and helps people find information. Assistant speaks in spanish"
+        }];
 
         // Comprueba si el historial de conversaciones no es mayor que la longitud del historial, o elimínalo desde el principio.
         if (this.count_user_messages(conversation_history_array) > history_length) {
@@ -167,7 +176,24 @@ class MainDialog extends LogoutDialog {
                     "parameters": {
                         "endpoint": process.env.SEARCH_ENDPOINT,
                         "key": process.env.SEARCH_KEY,
-                        "index_name": process.env.SEARCH_INDEX_NAME
+                        "index_name": process.env.SEARCH_INDEX_NAME,
+                        "semantic_configuration": "default",
+                        "query_type": "simple",
+                        "fields_mapping": {
+                            "content_fields_separator": "\n",
+                            "content_fields": [
+                                "merged_content"
+                            ],
+                            "filepath_field": "metadata_storage_name",
+                            "title_field": null,
+                            "url_field": "metadata_storage_path",
+                            "vector_fields": []
+                        },
+                        "in_scope": true,
+                        "role_information": "You are an AI assistant that helps people find information.",
+                        "filter": null,
+                        "strictness": 5,
+                        "top_n_documents": 25
                     }
                 }
             ],
@@ -176,20 +202,49 @@ class MainDialog extends LogoutDialog {
             "top_p": 0.95,
             "frequency_penalty": 0,
             "presence_penalty": 0,
-            "max_tokens": 800,
+            "max_tokens": 1200,
             "stop": null
         });
 
         try {
             // Enviar request a OpenAI
-            const data = await this.postDataToEndpoint(url, reqBody, headers);
+            const data = await this.postDataToEndpoint(openaiUrl, reqBody, headers);
 
             // Agregar la respuesta del chatbot a "conversation history"
             conversation_history_array.push({ "role": data.choices[0].message.role, "content": data.choices[0].message.content });
             // Actualizar "conversation history"
             conversation_history_dict[stepContext.context.activity.conversation.id] = conversation_history_array;
+
+            //await stepContext.context.sendActivity(JSON.stringify(data))
+
+            if (data.choices[0].message.content == null) {
+                iddoc = 0
+            } else {
+                iddoc = data.choices[0].message.content.split('[doc')[1]
+
+                //await stepContext.context.sendActivity(iddoc)
+
+                if (iddoc) {
+                    iddoctext = iddoc.toString().substring(0, 1)
+                    iddoc = Number(iddoctext) - 1
+                }
+            }
+
+            var responseBot = "";
+
             // Enviar respuesta a Usuario
-            const responseBot = `${data.choices[0].message.content} \n[~  ${data.usage.total_tokens} tokens in ${conversation_history_array.length} turns]`;
+            //const responseBot = `${data.choices[0].message.content} \n[~  ${data.usage.total_tokens} tokens in ${conversation_history_array.length} turns]`;
+
+            if (iddoc && data.choices[0].message.context.citations[iddoc].filepath) {
+                responseBot = `${data.choices[0].message.context.intent} - [Documento: ${data.choices[0].message.context.citations[iddoc].filepath}]
+                \n ${data.choices[0].message.content} `;
+            }
+            else if (data.choices[0].message.content) {
+                responseBot = `${data.choices[0].message.content} `
+            }
+            else {
+                responseBot = "No se ha encontrado respuesta"
+            }
 
             return await stepContext.context.sendActivity(responseBot)
 
