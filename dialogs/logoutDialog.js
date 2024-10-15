@@ -37,7 +37,7 @@ class LogoutDialog extends ComponentDialog {
                 const { activity } = innerDc.context;
                 await userTokenClient.signOutUser(activity.from.id, this.connectionName, activity.channelId);
 
-                await innerDc.context.sendActivity('Has cerrado sesión.');
+                await innerDc.context.sendActivity('Has cerrado sesión. Puede escribir cualquier cosa para iniciar sesión nuevamente.');
                 return await innerDc.cancelAllDialogs();
             }
         } 

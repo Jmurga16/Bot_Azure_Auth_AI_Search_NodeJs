@@ -12,7 +12,7 @@ const MAIN_DIALOG = 'MainDialog';
 const MAIN_WATERFALL_DIALOG = 'MainWaterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
-var counterSent = 0;
+
 var iddoc = 0;
 var iddoctext = '';
 
@@ -21,14 +21,16 @@ const headers = {
     'Content-Type': 'application/json',
     'api-key': process.env.OPENAI_API_KEY
 };
+
 let messageFromUser = ""
 
-let conversation_history_dict = {};
-//const history_length = 3;
+let conversation_history_array = [];
+
 const history_length = 5;
+
 let messages_init = {
     "role": "system",
-    "content": "As an advanced chatbot, your primary goal is to assist users to the best of your ability. This may involve answering questions, providing helpful information, or completing tasks based on user input. In order to effectively assist users, it is important to be detailed and thorough in your responses. Use examples and evidence to support your points and justify your recommendations or solutions."
+    "content": "Assistant is a large language model trained by OpenAI and helps people find information. Assistant speaks in spanish"
 };
 
 
@@ -45,8 +47,6 @@ class MainDialog extends LogoutDialog {
         }));
 
         this.addDialog(new ConfirmPrompt(CONFIRM_PROMPT));
-
-        counterSent = 0
 
         //stepContext = this
         this.addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
@@ -132,7 +132,8 @@ class MainDialog extends LogoutDialog {
                 return response.data;
             }
             catch (error) {
-                throw new Error(`Error posting data to ${url}: ${error}`);
+                throw new Error(`Error de conexión con el servidor.`);
+                //throw new Error(`Error posting data to ${url}: ${error}`);
             }
         });
     }
@@ -144,35 +145,37 @@ class MainDialog extends LogoutDialog {
 
         messageFromUser = stepContext.context.activity.text
 
-        counterSent++
-
-        if (messageFromUser.length == 6 && counterSent == 1) {
-            return await stepContext.context.sendActivity("Inicio de sesión exitoso.")
+        if (messageFromUser.length == 6) {
+            try {
+                if (parseInt(messageFromUser) > 0) {
+                    return await stepContext.context.sendActivity("Inicio de sesión exitoso.")
+                }
+            } catch (error) {
+                return await stepContext.context.sendActivity(error)
+            }
         }
 
-        //await stepContext.context.sendActivity(`Consulta numero ${counterSent}`)
 
-        //let conversation_history_array = [{ "role": "user", "content": "Contestar en español" }];
-        let conversation_history_array = [{
-            "role": "system",
-            "content": "Assistant is a large language model trained by OpenAI and helps people find information. Assistant speaks in spanish"
-        }];
+        if (conversation_history_array.length == 0) {
+            conversation_history_array.push(messages_init);
+        }
 
         // Comprueba si el historial de conversaciones no es mayor que la longitud del historial, o elimínalo desde el principio.
         if (this.count_user_messages(conversation_history_array) > history_length) {
-            console.log("history too long - removing first element");
+            console.log("Eliminando primera pregunta de usuario");
             let N = 2;
             for (let i = 0; i < N; i++) {
                 conversation_history_array.shift();
             }
             conversation_history_array[0] = messages_init;
         }
+
         conversation_history_array.push({ "role": "user", "content": messageFromUser });
 
         let reqBody = JSON.stringify({
             "data_sources": [
                 {
-                    "type": "AzureCognitiveSearch",
+                    "type": "azure_search",
                     "parameters": {
                         "endpoint": process.env.SEARCH_ENDPOINT,
                         "key": process.env.SEARCH_KEY,
@@ -190,16 +193,20 @@ class MainDialog extends LogoutDialog {
                             "vector_fields": []
                         },
                         "in_scope": true,
-                        "role_information": "You are an AI assistant that helps people find information.",
+                        "role_information": "Eres un bot que responde en español basado en documentos compartidos.",
                         "filter": null,
-                        "strictness": 5,
-                        "top_n_documents": 25
+                        "strictness": 4,
+                        "top_n_documents": 15,
+                        "authentication": {
+                            "type": "api_key",
+                            "key": process.env.SEARCH_KEY
+                        }
                     }
                 }
             ],
             "messages": conversation_history_array,
-            "temperature": 0.7,
-            "top_p": 0.95,
+            "temperature": 0.4,
+            "top_p": 0.9,
             "frequency_penalty": 0,
             "presence_penalty": 0,
             "max_tokens": 1200,
@@ -212,8 +219,6 @@ class MainDialog extends LogoutDialog {
 
             // Agregar la respuesta del chatbot a "conversation history"
             conversation_history_array.push({ "role": data.choices[0].message.role, "content": data.choices[0].message.content });
-            // Actualizar "conversation history"
-            conversation_history_dict[stepContext.context.activity.conversation.id] = conversation_history_array;
 
             //await stepContext.context.sendActivity(JSON.stringify(data))
 
@@ -221,8 +226,6 @@ class MainDialog extends LogoutDialog {
                 iddoc = 0
             } else {
                 iddoc = data.choices[0].message.content.split('[doc')[1]
-
-                //await stepContext.context.sendActivity(iddoc)
 
                 if (iddoc) {
                     iddoctext = iddoc.toString().substring(0, 1)
@@ -233,8 +236,6 @@ class MainDialog extends LogoutDialog {
             var responseBot = "";
 
             // Enviar respuesta a Usuario
-            //const responseBot = `${data.choices[0].message.content} \n[~  ${data.usage.total_tokens} tokens in ${conversation_history_array.length} turns]`;
-
             if (iddoc && data.choices[0].message.context.citations[iddoc].filepath) {
                 responseBot = `${data.choices[0].message.context.intent} - [Documento: ${data.choices[0].message.context.citations[iddoc].filepath}]
                 \n ${data.choices[0].message.content} `;
@@ -250,7 +251,7 @@ class MainDialog extends LogoutDialog {
 
         }
         catch (error) {
-            return await stepContext.context.sendActivity(`${error} - try again later!`)
+            return await stepContext.context.sendActivity(`${error} - Intente nuevamente.`)
         }
     }
 
