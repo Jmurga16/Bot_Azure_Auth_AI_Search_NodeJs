@@ -151,10 +151,10 @@ class MainDialog extends LogoutDialog {
                     return await stepContext.context.sendActivity("Inicio de sesión exitoso.")
                 }
             } catch (error) {
-                return await stepContext.context.sendActivity(error)
+                console.error(error);
+                //return await stepContext.context.sendActivity(error)
             }
         }
-
 
         if (conversation_history_array.length == 0) {
             conversation_history_array.push(messages_init);
@@ -193,7 +193,7 @@ class MainDialog extends LogoutDialog {
                             "vector_fields": []
                         },
                         "in_scope": true,
-                        "role_information": "Eres un bot que responde en español basado en documentos compartidos.",
+                        "role_information": "Eres un bot que responde en español, tus respuestas son basadas en documentos compartidos.",
                         "filter": null,
                         "strictness": 4,
                         "top_n_documents": 15,
@@ -220,26 +220,34 @@ class MainDialog extends LogoutDialog {
             // Agregar la respuesta del chatbot a "conversation history"
             conversation_history_array.push({ "role": data.choices[0].message.role, "content": data.choices[0].message.content });
 
-            //await stepContext.context.sendActivity(JSON.stringify(data))
+            var numberReferences = 0;
+            let listReferences = [];
 
-            if (data.choices[0].message.content == null) {
-                iddoc = 0
-            } else {
-                iddoc = data.choices[0].message.content.split('[doc')[1]
+            if (data.choices[0].message.content != null) {
 
-                if (iddoc) {
-                    iddoctext = iddoc.toString().substring(0, 1)
-                    iddoc = Number(iddoctext) - 1
+                //Cantidad de referencias
+                numberReferences = data.choices[0].message.context.citations.length;
+
+                if (numberReferences > 0) {
+                    data.choices[0].message.context.citations.forEach((element, index) => {
+                        if (data.choices[0].message.content.includes(`[doc${index + 1}]`)) {
+                            listReferences.push({ "doc": `[doc${index + 1}]`, "filepath": element.filepath })
+                        }
+                    });
                 }
+
             }
 
             var responseBot = "";
 
             // Enviar respuesta a Usuario
-            if (iddoc && data.choices[0].message.context.citations[iddoc].filepath) {
-                responseBot = `${data.choices[0].message.context.intent} - [Documento: ${data.choices[0].message.context.citations[iddoc].filepath}]
-                \n ${data.choices[0].message.content} `;
-            }
+            if (listReferences.length > 0) {
+                responseBot = `${data.choices[0].message.content} \n `
+                responseBot = responseBot + `\n Referencias: `
+                listReferences.forEach(element => {
+                    responseBot = responseBot + `\n ${element.doc} : ${element.filepath}`
+                });
+            }            
             else if (data.choices[0].message.content) {
                 responseBot = `${data.choices[0].message.content} `
             }
