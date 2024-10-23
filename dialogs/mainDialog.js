@@ -1,20 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const botbuilder_1 = require("botbuilder");
 const axios_1 = require("axios");
 
 const { ConfirmPrompt, DialogSet, DialogTurnStatus, OAuthPrompt, WaterfallDialog } = require('botbuilder-dialogs');
 const { LogoutDialog } = require('./logoutDialog');
 
+
 const CONFIRM_PROMPT = 'ConfirmPrompt';
 const MAIN_DIALOG = 'MainDialog';
 const MAIN_WATERFALL_DIALOG = 'MainWaterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
-
-
-var iddoc = 0;
-var iddoctext = '';
 
 const openaiUrl = process.env.OPENAI_API_URL;
 const headers = {
@@ -48,7 +44,6 @@ class MainDialog extends LogoutDialog {
 
         this.addDialog(new ConfirmPrompt(CONFIRM_PROMPT));
 
-        //stepContext = this
         this.addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
             this.promptStep.bind(this),
             this.loginStep.bind(this),
@@ -128,7 +123,7 @@ class MainDialog extends LogoutDialog {
     async postDataToEndpoint(url, requestBody, headers) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const response = yield axios_1.default.post(url, requestBody, { headers });
+                const response = yield axios_1.post(url, requestBody, { headers });
                 return response.data;
             }
             catch (error) {
@@ -223,9 +218,8 @@ class MainDialog extends LogoutDialog {
             var numberReferences = 0;
             let listReferences = [];
 
+            //Definicion de referencias
             if (data.choices[0].message.content != null) {
-
-                //Cantidad de referencias
                 numberReferences = data.choices[0].message.context.citations.length;
 
                 if (numberReferences > 0) {
@@ -235,7 +229,6 @@ class MainDialog extends LogoutDialog {
                         }
                     });
                 }
-
             }
 
             var responseBot = "";
@@ -247,7 +240,7 @@ class MainDialog extends LogoutDialog {
                 listReferences.forEach(element => {
                     responseBot = responseBot + `\n ${element.doc} : ${element.filepath}`
                 });
-            }            
+            }
             else if (data.choices[0].message.content) {
                 responseBot = `${data.choices[0].message.content} `
             }
